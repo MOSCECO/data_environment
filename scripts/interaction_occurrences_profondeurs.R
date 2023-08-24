@@ -3,32 +3,26 @@
 database <- "copernicus"
 that_var <- "so"
 
-# occurrence
-superfamily <- "Muricoidea"
-species     <- "Claremontiella_nodulosa"
-O <- occ[[superfamily]][[species]]
+# aggrégation de toutes les occurrences
+O <- do.call(rbind, lapply(occ, \(l) do.call(rbind, l)))
+bb <- c(xmin = -125, ymin = -60, ymax = 60, xmax = 65) %>% st_bbox()
+st_crs(bb) <- st_crs(O2)
+O2 <- sf::st_crop(O, bb)
+O <- O[-which(O$occurrenceID %in% O2$occurrenceID), ]
+
 
 # profondeurs
-gebco <- rast(
-  here(
-    "data", "raw", "gebco",
-    "GEBCO_17_Apr_2023_9ec486961797",
-    "gebco_2022_n28.87_s-23.08_w-112.033_e-40.6667.tif"
-  )
+gebc0 <- read_stars(
+  here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-140.0_e-20.0.tif")
 )
+gebc1 <- read_stars(
+  here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-20.0_e65.0.tif")
+)
+gebco <- stars::st_mosaic(gebc0, gebc1)
 
 # suppression des valeurs d'altitude ----
-# gebco_bathy_df <- as.data.frame(gebco, xy = T) %>%
-#   as.data.table()
-# names(gebco_bathy_df)[3] <- "depth"
-# gebco_bathy_df$depth[gebco_bathy_df$depth > 0] <- NA
-# gebco_bathy <- rast(gebco_bathy_df)
-# writeRaster(
-#   gebco_bathy,
-#   here("data", "raw", "gebco", "gebco_bathymetry.tif")
-# )
-# rm(gebco_bathy_df)
-# x11() ; plot(gebco_bathy)
+gebco_bathy <- gebco %>%
+  filter()
 gebco_bathy <- rast(here("data", "raw", "gebco", "gebco_bathymetry.tif"))
 
 # extraction des profondeurs des occurrences ----
