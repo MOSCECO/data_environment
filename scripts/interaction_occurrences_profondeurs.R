@@ -6,27 +6,62 @@ that_var <- "so"
 # aggrégation de toutes les occurrences
 O <- do.call(rbind, lapply(occ, \(l) do.call(rbind, l)))
 bb <- c(xmin = -125, ymin = -60, ymax = 60, xmax = 65) %>% st_bbox()
-st_crs(bb) <- st_crs(O2)
+st_crs(bb) <- st_crs(O)
 O2 <- sf::st_crop(O, bb)
 O <- O[-which(O$occurrenceID %in% O2$occurrenceID), ]
 
 
 # profondeurs
-gebc0 <- read_stars(
-  here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-140.0_e-20.0.tif")
-)
-gebc1 <- read_stars(
-  here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-20.0_e65.0.tif")
-)
-gebco <- stars::st_mosaic(gebc0, gebc1)
+# gebc0 <- read_stars(
+#   here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-140.0_e-20.0.tif")
+# )
+# gebc1 <- read_stars(
+#   here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-20.0_e65.0.tif")
+# )
+# gebco <- stars::st_mosaic(gebc0, gebc1)
+# gebco_s2 <- st_as_stars(gebco)
+# names(gebco_s2) <- "depth"
 
 # suppression des valeurs d'altitude ----
-gebco_bathy <- gebco %>%
-  filter()
-gebco_bathy <- rast(here("data", "raw", "gebco", "gebco_bathymetry.tif"))
+# gebco_bathy <- gebco_s2
+# gebco_bathy[gebco_bathy["depth", , ] > 0] <- 0
+# saveRDS(
+#   gebco_bathy,
+#   here::here("data", "raw", "gebco", "gebco_bathymetry.rds")
+# )
+gebco_bathy <- readRDS(here("data", "raw", "gebco", "gebco_bathymetry.rds"))
 
 # extraction des profondeurs des occurrences ----
-O$depth <- terra::extract(gebco, O, ID = F)[[1]]
+O$depth <- st_extract(gebco_bathy, O) %>%
+  st_drop_geometry()
+# Études des profondeurs pour toutes les occurrences
+quantile(O[["depth"]] %>% unlist(use.names = F), 0.1)
+# et selon les espèces
+Os <- split(O, f = O$scientificName)
+res <- lapply(
+  Os,
+  \(tb) {
+    u <- tb %>%
+      st_drop_geometry() %>%
+      select(depth) %>%
+      unlist(use.names = F)
+    quantile(u, 0.1)
+  }
+)
+sort(unlist(res))
+Op <- Os[which(unlist(res, use.names = F) < -500)]
+Op %>% lapply(dim)
+Op %>% lapply(\(tb) {
+  u <- tb %>%
+    st_drop_geometry() %>%
+    select(depth) %>%
+    unlist(use.names = F)
+  summary(u)
+})
+# Toutes les moyennes des profondeurs pour les espèces qui ont les quantiles 10%
+# les plus profonds sont aux alentours de quelques centaines de m
+# Coralliophila aedonia est particulièrement
+
 # on regarde les occurrences sur des altitudes (et pas des profondeurs)
 # x11() ; hist(O$depth[O$depth >= 0], breaks = 100)
 # on fixe une incertitude de 10m
