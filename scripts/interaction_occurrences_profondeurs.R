@@ -3,65 +3,36 @@
 database <- "copernicus"
 that_var <- "so"
 
-# aggrégation de toutes les occurrences
-O <- do.call(rbind, lapply(occ, \(l) do.call(rbind, l)))
-bb <- c(xmin = -125, ymin = -60, ymax = 60, xmax = 65) %>% st_bbox()
-st_crs(bb) <- st_crs(O)
-O2 <- sf::st_crop(O, bb)
-O <- O[-which(O$occurrenceID %in% O2$occurrenceID), ]
-
+# occurrence
+superfamily <- "Muricoidea"
+species     <- "Claremontiella_nodulosa" 
+O <- occ[[superfamily]][[species]]
 
 # profondeurs
-# gebc0 <- read_stars(
-#   here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-140.0_e-20.0.tif")
-# )
-# gebc1 <- read_stars(
-#   here("data", "raw", "gebco", "gebco_2023_n60.0_s-60.0_w-20.0_e65.0.tif")
-# )
-# gebco <- stars::st_mosaic(gebc0, gebc1)
-# gebco_s2 <- st_as_stars(gebco)
-# names(gebco_s2) <- "depth"
+gebco <- rast(
+  here(
+    "data", "raw", "gebco", 
+    "GEBCO_17_Apr_2023_9ec486961797", 
+    "gebco_2022_n28.87_s-23.08_w-112.033_e-40.6667.tif"
+  )
+)
 
 # suppression des valeurs d'altitude ----
-# gebco_bathy <- gebco_s2
-# gebco_bathy[gebco_bathy["depth", , ] > 0] <- 0
-# saveRDS(
-#   gebco_bathy,
-#   here::here("data", "raw", "gebco", "gebco_bathymetry.rds")
+# gebco_bathy_df <- as.data.frame(gebco, xy = T) %>% 
+#   as.data.table()
+# names(gebco_bathy_df)[3] <- "depth"
+# gebco_bathy_df$depth[gebco_bathy_df$depth > 0] <- NA
+# gebco_bathy <- rast(gebco_bathy_df)
+# writeRaster(
+#   gebco_bathy, 
+#   here("data", "raw", "gebco", "gebco_bathymetry.tif")
 # )
-gebco_bathy <- readRDS(here("data", "raw", "gebco", "gebco_bathymetry.rds"))
+# rm(gebco_bathy_df)
+# x11() ; plot(gebco_bathy)
+gebco_bathy <- rast(here("data", "raw", "gebco", "gebco_bathymetry.tif"))
 
 # extraction des profondeurs des occurrences ----
-O$depth <- st_extract(gebco_bathy, O) %>%
-  st_drop_geometry()
-# Études des profondeurs pour toutes les occurrences
-quantile(O[["depth"]] %>% unlist(use.names = F), 0.1)
-# et selon les espèces
-Os <- split(O, f = O$scientificName)
-res <- lapply(
-  Os,
-  \(tb) {
-    u <- tb %>%
-      st_drop_geometry() %>%
-      select(depth) %>%
-      unlist(use.names = F)
-    quantile(u, 0.1)
-  }
-)
-sort(unlist(res))
-Op <- Os[which(unlist(res, use.names = F) < -500)]
-Op %>% lapply(dim)
-Op %>% lapply(\(tb) {
-  u <- tb %>%
-    st_drop_geometry() %>%
-    select(depth) %>%
-    unlist(use.names = F)
-  summary(u)
-})
-# Toutes les moyennes des profondeurs pour les espèces qui ont les quantiles 10%
-# les plus profonds sont aux alentours de quelques centaines de m
-# Coralliophila aedonia est particulièrement
-
+O$depth <- terra::extract(gebco, O, ID = F)[[1]]
 # on regarde les occurrences sur des altitudes (et pas des profondeurs)
 # x11() ; hist(O$depth[O$depth >= 0], breaks = 100)
 # on fixe une incertitude de 10m
@@ -71,15 +42,16 @@ dim(O) # 362  23
 # mise à zéro des altitudes dans le jeu de données restant
 O$depth[O$depth > 0] <- 0
 # on détermine la profondeur du quantile 95% qui servira de filtre
-# 1) aux occurrences
+# 1) aux occurrences 
 # 2) à l'intervalle bathymétrique retenu pour la génération de climatologies
-bathy_threshold <- quantile(-unlist(na.omit(O$depth)), 0.95) # 576
+bathy_threshold <- quantile(-na.omit(O$depth), 0.95) # 576
 
 # sélection de l'intervalle bathymétrique dans le stars
-gebco_bathy[gebco_bathy["depth", , ] > 0] <- 0
+debco <- as.data.frame(gebco, xy = T)
+names(debco)[3] <- "depth"
 
 # filtre pour ne garder que des valeurs côtières
-debcoast <- debco %>%
+debcoast <- debco %>% 
   filter(depth > -bathy_threshold & depth <= bathy_uncertainty)
 debcoast$depth[debcoast$depth > 0] <- 0
 gebcoast <- rast(debcoast)
@@ -87,18 +59,18 @@ gebcoast <- rast(debcoast)
 
 # filtre selon les profondeurs pour les climatologies de salinité
 seuils <- list(
-  c(bathy_uncertainty, -9.573),
-  c(-9.573, -25.2114),
-  c(-25.2114, -77.8539),
-  c(-77.8539, -130.666),
+  c(bathy_uncertainty, -9.573), 
+  c(-9.573, -25.2114), 
+  c(-25.2114, -77.8539), 
+  c(-77.8539, -130.666), 
   c(-130.666, -bathy_threshold)
 )
 names(seuils) <- paste0("lvl", 0:4)
 
 bathy_slices <- lapply(
-  seuils,
+  seuils, 
   \(bnd) {
-    tbout <- debco %>%
+    tbout <- debco %>% 
       filter(depth <= bnd[[1]] & depth > bnd[[2]])
     tbout$depth[tbout$depth > 0] <- 0
     rout <- rast(tbout)
@@ -113,71 +85,71 @@ table(is.na(O$depth2)) #   342    20
 
 # sauvegarde
 saveRDS(
-  gebcoast,
+  gebcoast, 
   here(
-    "data",
-    "tidy",
+    "data", 
+    "tidy", 
     paste(
-      "bathymetry", "gebco", "raster",
-      bathy_threshold %>% paste0("m"),
+      "bathymetry", "gebco", "raster", 
+      bathy_threshold %>% paste0("m"), 
       tolower(superfamily), tolower(species),
-      sep = "_") %>%
+      sep = "_") %>% 
       paste0(".rds")
   )
 )
 saveRDS(
-  bathy_slices,
+  bathy_slices, 
   here(
-    "data",
-    "tidy",
+    "data", 
+    "tidy", 
     paste(
       "bathymetry", "gebco", "raster", "slices",
-      bathy_threshold %>% paste0("m"),
+      bathy_threshold %>% paste0("m"), 
       tolower(superfamily), tolower(species),
-      sep = "_") %>%
+      sep = "_") %>% 
       paste0(".rds")
   )
 )
 writeRaster(
-  gebcoast,
+  gebcoast, 
   here(
-    "data",
-    "tidy",
+    "data", 
+    "tidy", 
     paste(
-      "bathymetry", "gebco", "raster",
-      bathy_threshold %>% paste0("m"),
+      "bathymetry", "gebco", "raster", 
+      bathy_threshold %>% paste0("m"), 
       tolower(superfamily), tolower(species),
-      sep = "_") %>%
+      sep = "_") %>% 
       paste0(".tif")
   )
 )
 lapply(
-  names(bathy_slices),
+  names(bathy_slices), 
   \(nr) {
     writeRaster(
-      bathy_slices[[nr]],
+      bathy_slices[[nr]], 
       here(
-        "data",
-        "tidy",
+        "data", 
+        "tidy", 
         paste(
-          "bathymetry", "gebco", "raster",
-          paste(seuils[[nr]], collapse = "_") %>% paste0("m"),
+          "bathymetry", "gebco", "raster", 
+          paste(seuils[[nr]], collapse = "_") %>% paste0("m"), 
           tolower(superfamily), tolower(species),
-          sep = "_") %>%
+          sep = "_") %>% 
           paste0(".tif")
       )
     )
   }
 )
 saveRDS(
-  O,
+  O, 
   here(
-    "data", "tidy",
+    "data", "tidy", 
     paste(
       "occurrences", "with", "depths",
-      bathy_threshold %>% paste0("m"),
+      bathy_threshold %>% paste0("m"), 
       tolower(superfamily), tolower(species),
-      sep = "_") %>%
+      sep = "_") %>% 
       paste0(".rds")
   )
 )
