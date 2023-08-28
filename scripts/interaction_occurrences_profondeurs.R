@@ -73,11 +73,10 @@ O$depth[O$depth > 0] <- 0
 # on détermine la profondeur du quantile 95% qui servira de filtre
 # 1) aux occurrences
 # 2) à l'intervalle bathymétrique retenu pour la génération de climatologies
-bathy_threshold <- quantile(-na.omit(O$depth), 0.95) # 576
+bathy_threshold <- quantile(-unlist(na.omit(O$depth)), 0.95) # 576
 
 # sélection de l'intervalle bathymétrique dans le stars
-debco <- as.data.frame(gebco, xy = T)
-names(debco)[3] <- "depth"
+gebco_bathy[gebco_bathy["depth", , ] > 0] <- 0
 
 # filtre pour ne garder que des valeurs côtières
 debcoast <- debco %>%
