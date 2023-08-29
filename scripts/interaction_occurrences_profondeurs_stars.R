@@ -34,22 +34,31 @@ gebco_bathy <- readRDS(here("data", "raw", "gebco", "gebco_bathymetry.rds"))
 # extraction des profondeurs des occurrences ----
 O$depth <- st_extract(gebco_bathy, O) %>%
   st_drop_geometry()
+
 # Études des profondeurs pour toutes les occurrences
 quantile(O[["depth"]] %>% unlist(use.names = F), 0.1)
 # et selon les espèces
 Os <- split(O, f = O$scientificName)
-res <- lapply(
+bathy_threshold <- lapply(
   Os,
   \(tb) {
     u <- tb %>%
       st_drop_geometry() %>%
       select(depth) %>%
       unlist(use.names = F)
-    quantile(u, 0.1)
+    quantile(-u, 0.75)  # Seuil arbitraire pour être assez stringent pour ne pas
+    # aller échantillonner des pseudo-absences complètement en dehors de la
+    # niche de l'espèce
   }
 )
-sort(unlist(res))
-Op <- Os[which(unlist(res, use.names = F) < -500)]
+# Bathymetric threshold
+BT <- ceiling(summary(sort(unlist(bathy_threshold)))[5]/10)*10
+
+bathy_threshold_rounded <- lapply(bathy_threshold, \(x) ceiling(x/10)*10)
+
+# Espèces "profondes" (à mettre en lien avec les listes d'espèces "côtières"
+# et "profondes" de data_biologic)
+Op <- Os[which(unlist(bathy_threshold, use.names = F) > 500)]
 Op %>% lapply(dim)
 Op %>% lapply(\(tb) {
   u <- tb %>%
@@ -62,44 +71,37 @@ Op %>% lapply(\(tb) {
 # les plus profonds sont aux alentours de quelques centaines de m
 # Coralliophila aedonia est particulièrement
 
-# on regarde les occurrences sur des altitudes (et pas des profondeurs)
-# x11() ; hist(O$depth[O$depth >= 0], breaks = 100)
-# on fixe une incertitude de 10m
-bathy_uncertainty <- 10
-O <- O %>% filter(depth <= bathy_uncertainty)
-dim(O) # 362  23
-# mise à zéro des altitudes dans le jeu de données restant
-O$depth[O$depth > 0] <- 0
-# on détermine la profondeur du quantile 95% qui servira de filtre
-# 1) aux occurrences
-# 2) à l'intervalle bathymétrique retenu pour la génération de climatologies
-bathy_threshold <- quantile(-unlist(na.omit(O$depth)), 0.95)
-# bathy_threshold <- 576 # Claremontiella nodulosa
-bathy_threshold <- 615 # toutes les espèces côtières
-
-# sélection de l'intervalle bathymétrique dans le stars
-# rm(gebco_bathy)
-# gebco_s2[
-#   gebco_s2["depth", , ] < -bathy_threshold | gebco_s2["depth", , ] > 0
-# ] <- NA
+# Écriture d'un seul raster de profondeurs pour les climatologies
+# à partir du troisième quartile des profondeurs à 75% de toutes les espèces
+# Dossier de sortie
+# pb <- here("data", "tidy", "bathymetrie_gebco_raster")
+# makeMyDir(pb)
 #
-# write_stars(
-#   gebco_s2,
-#   paste(
-#     "bathymetry", "gebco", "raster",
-#     bathy_threshold %>% paste0("m"),
-#     sep = "_"
-#   ) %>%
-#     paste0(".tif")
-# )
+# file_name <- paste(
+#   "bathymetry", "gebco", "raster", BT %>% paste0("m"), sep = "_"
+# ) %>%
+#   paste0(".tif")
+# bool <- !file.exists(here(pb, file_name))
+#
+# if (bool) {
+#
+#   # Nettoyage de la mémoire vive
+#   gc()
+#
+#   # sélection de l'intervalle bathymétrique
+#   gebco_s2[
+#     gebco_s2["depth", , ] < -BT | gebco_s2["depth", , ] > 0
+#   ] <- NA
+#
+#   # Sauvegarde
+#   write_stars(gebco_s2, here(pb, file_name))
+#
+# }
 
+# Nouvelle importation
 gebco_rast <- here(
-  "data", "tidy", paste(
-    "bathymetry", "gebco", "raster",
-    bathy_threshold %>% paste0("m"),
-    sep = "_"
-  ) %>%
-    paste0(".tif")
+  "data", "tidy", "bathymetrie_gebco_raster",
+  "bathymetry_gebco_raster_200m.tif"
 ) %>% rast()
 
 # filtre selon les profondeurs pour les climatologies de salinité
@@ -108,7 +110,7 @@ seuils <- list(
   c(-9.573, -25.2114),
   c(-25.2114, -77.8539),
   c(-77.8539, -130.666),
-  c(-130.666, -bathy_threshold)
+  c(-130.666, -BT)
 )
 names(seuils) <- paste0("lvl", 0:4)
 
@@ -125,47 +127,19 @@ bathy_slices <- lapply(
 names(bathy_slices) <- paste0("lvl", 0:4)
 # bathy_slices$lvl0 %>% lapply(\(x) {x11() ; plot(x)})
 
-O$depth2 <- terra::extract(gebcoast, O, ID = F)[[1]]
-table(is.na(O$depth2)) #   342    20
-
 # sauvegarde
-saveRDS(
-  gebcoast,
-  here(
-    "data",
-    "tidy",
-    paste(
-      "bathymetry", "gebco", "raster",
-      bathy_threshold %>% paste0("m"),
-      tolower(superfamily), tolower(species),
-      sep = "_") %>%
-      paste0(".rds")
-  )
-)
 saveRDS(
   bathy_slices,
   here(
     "data",
     "tidy",
+    "bathymetrie_gebco_raster",
     paste(
       "bathymetry", "gebco", "raster", "slices",
-      bathy_threshold %>% paste0("m"),
+      BT %>% paste0("m"),
       # tolower(superfamily), tolower(species),
       sep = "_") %>%
       paste0(".rds")
-  )
-)
-writeRaster(
-  gebcoast,
-  here(
-    "data",
-    "tidy",
-    paste(
-      "bathymetry", "gebco", "raster",
-      bathy_threshold %>% paste0("m"),
-      tolower(superfamily), tolower(species),
-      sep = "_") %>%
-      paste0(".tif")
   )
 )
 lapply(
@@ -176,6 +150,7 @@ lapply(
       here(
         "data",
         "tidy",
+        "bathymetrie_gebco_raster",
         paste(
           "bathymetry", "gebco", "raster",
           paste(seuils[[nr]], collapse = "_") %>% paste0("m"),
