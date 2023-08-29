@@ -22,16 +22,6 @@ source(here::here("scripts", "home_pointer_so.R"))
 # les quatre différentes couches de salinité disponibles.
 source(here::here("scripts", "home_pointer_waves.R"))
 
-# Tentative de climatologies avec stars qui ne semble pas concluant
-# pour le moment :
-source(here::here("scripts", "climatologies_vagues.R"))
-source(here::here("scripts", "climatologies_salinité.R"))
-source(here::here("scripts", "climatologies_salinité_hybride.R"))
-# aggrégation de toutes les climatologies dans un seul objet stars
-source(here::here("scripts", "climatologies_finale.R"))
-source(here::here("scripts", "climatologies_stars_bottomt_valeurs_cotieres.R"))
-source(here::here("scripts", "climatologies_stars_bottomt.R"))
-
 # Pour les modèles de distribution d'espèces au niveau global, il faut tirer
 # des pseudo-absences. Pour cela il faut une grille de données pour la zone d'
 # étude, à savoir les amériques (et la Méditerrannée et l'Afrique pour deux
@@ -44,5 +34,18 @@ source(here::here("scripts", "climatologies_stars_bottomt.R"))
 # à l'espèce pour ces phases pour le moment et on réduit l'emprise des climatos
 # au moment de la sélection des pseudo-absences.
 source(here::here("scripts", "boot.R"))
-source(here::here("scripts", "interaction_occurrences_profondeurs_stars.R"))
-source(here::here("scripts", "filtre_profondeurs_gebco_par_espece.R"))
+source(here::here("scripts", "grille_bathymétrique_pour_occurrences.R"))
+# source(here::here("scripts", "filtre_profondeurs_gebco_par_espece.R"))
+
+# Tentative de climatologies avec stars qui ne semble pas concluant
+# pour le moment :
+source(here::here("scripts", "climatologies_vagues.R"))
+source(here::here("scripts", "climatologies_salinité.R"))
+source(here::here("scripts", "climatologies_salinité_hybride.R"))
+# aggrégation de toutes les climatologies dans un seul objet stars
+source(here::here("scripts", "climatologies_finale.R"))
+
+# Code fonctionnel pour les climatologies :
+source(here::here("scripts", "climatologies_stars_bottomt_valeurs_cotieres.R"))
+# Modification de ce code fonctionnel au 29/08/2023
+source(here::here("scripts", "climatologies_copernicus_ameriques_cotier.R"))
