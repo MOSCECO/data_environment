@@ -22,10 +22,10 @@ variables <- c("VHM0", "VHM0_SW1", "VHM0_WW")
 # dates de téléchargement
 date_min <- "2020-12-01" %>% as.Date()
 date_max <- "2023-01-01" %>% as.Date()
-date_seq <- seq(date_min, date_max, by = "month")
-date_cmb <- date_seq[-length(date_seq)] %>% 
-  as.character() %>% 
-  cbind(date_seq[-1] %>% as.character()) %>% 
+date_seq <- seq(date_min, date_max, by = "weeks")
+date_cmb <- date_seq[-length(date_seq)] %>%
+  as.character() %>%
+  cbind(date_seq[-1] %>% as.character()) %>%
   as_tibble()
 names(date_cmb) <- c("date_str", "date_end")
 # création dossier de destination
@@ -35,63 +35,64 @@ penvvar <- here(input, database, that_var)
 makeMyDir(penvvar)
 
 # emprise maximale
-bboxes <- do.call(
-  rbind, 
-  lapply(
-    names(occ), 
-    \(supfam) {
-      bbxs <- lapply(
-        occ[[supfam]], 
-        \(sf) {
-          st_bbox(sf)
-        }
-      )
-      do.call(rbind, bbxs)
-    }
-  )
-) %>% as_tibble()
+# bboxes <- do.call(
+#   rbind,
+#   lapply(
+#     names(occ),
+#     \(supfam) {
+#       bbxs <- lapply(
+#         occ[[supfam]],
+#         \(sf) {
+#           st_bbox(sf)
+#         }
+#       )
+#       do.call(rbind, bbxs)
+#     }
+#   )
+# ) %>% as_tibble()
+#
+# global_bbox <- st_bbox(
+#   c(
+#     xmin = min(bboxes$xmin),
+#     ymin = min(bboxes$ymin),
+#     xmax = max(bboxes$xmax),
+#     ymax = max(bboxes$ymax)
+#   )
+# )
+# global_bbox_chara <- global_bbox %>% as.character()
+global_bbox_chara <- c(-140, -60, 65, 60) %>% as.character()
 
-global_bbox <- st_bbox(
-  c(
-    xmin = min(bboxes$xmin),
-    ymin = min(bboxes$ymin),
-    xmax = max(bboxes$xmax),
-    ymax = max(bboxes$ymax)
-  )
-)
-global_bbox_chara <- global_bbox %>% as.character()
-
-# ggplot() + 
+# ggplot() +
 #   geom_sf(data = wrld_sf %>% st_crop(global_bbox))
 
 apply(
-  date_cmb, 
-  1, 
+  date_cmb,
+  1,
   \(tup) {
-    
+
     paste("date min", date_min <- tup[[1]])
     paste("date_max", date_max <- tup[[2]])
-    
+
     # nom du fichier de destination
     file_name <- paste(
-      database, that_var, date_min, date_max, 
+      database, that_var, date_min, date_max,
       paste0(global_bbox_chara, collapse = "_"),
       sep = "_"
     ) %>% paste0(".nc")
-    
+
     if(
       !file.exists(here(penvvar, file_name))
     ) {
-      configuration <- 
+      configuration <-
         CMEMS.config(
           script        = path_motuclient,
-          user          = user_name, 
-          pwd           = password, 
+          user          = user_name,
+          pwd           = password,
           motu          = lien_motu,
-          service.id    = service_id, 
+          service.id    = service_id,
           product.id    = product_id,
-          variable      = variables, 
-          date.min      = date_min, 
+          variable      = variables,
+          date.min      = date_min,
           date.max      = date_max,
           longitude.min = global_bbox_chara[1],
           latitude.min  = global_bbox_chara[2],
@@ -100,7 +101,7 @@ apply(
           out.dir       = penvvar,
           out.name      = file_name
         )
-      
+
       CMEMS.download(configuration)
     }
   }

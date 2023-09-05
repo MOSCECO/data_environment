@@ -9,14 +9,14 @@ O <- occ[[superfamily]][[species]]
 
 # profondeurs
 gebcoast <- here(
-  "data", "tidy", "bathymetrie_gebco_raster", "bathymetry_gebco_raster_200m.tif"
+  "data", "tidy", "bathymetrie_gebco_raster", "bathymetry_gebco_raster_150m.tif"
 ) %>%
   rast()
 
 # Import des données environnementales
 s2_bottomt <- list.files(
   here("data", "raw", "env", "copernicus", "bottomT"), full.names = T
-)[c(1:2)] %>%
+) %>%
   read_stars(along = 3)
 
 s2_waves <- list.files(
@@ -64,15 +64,22 @@ crs(gebcoast) <- "epsg:4326"
 s2_gebcoast <- st_as_stars(gebcoast)
 raster_bottomt <- s2_bottomt
 raster_bottomt <- raster_bottomt[, , , 1]
-raster_bottomt <- split(raster_bottomt, 3)
+# raster_bottomt <- split(raster_bottomt, 3)
+raster_bottomt <- st_as_stars(raster_bottomt)
 s2_gebcoast_redim <- st_warp(s2_gebcoast, raster_bottomt)
 
 # sélection des cellules des variables de copernicus à partir des cellules
 # non-nulles de profondeur
+names(s2_gebcoast_redim) <- "depth"
 table(is.na(s2_gebcoast_redim["depth", ,]))
+
+# Découpage selon les bathymétries d'intérêt
+gc()
 s2_bottomt_mask <- s2_bottomt
+s2_bottomt_mask <- s2_bottomt_mask[, , , 1:2]
 s2_bottomt_mask[is.na(s2_gebcoast_redim)] <- NA
-x11() ; plot(s2_bottomt_mask[, , , 1])
+s2_bottomt_mask <- st_as_stars(s2_bottomt_mask)
+x11() ; plot(s2_bottomt_mask)
 
 # climatologies ----
 # moyenne
