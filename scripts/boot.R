@@ -115,22 +115,26 @@ pa <- readRDS(
 )
 
 # dossier copié de data_occ_prep > data > tidy
-occ <- lapply(
-  superfamilies,
-  \(supfam) {
-    o <- list.files(
-      here("data", "raw", "global_occ_filtered", supfam),
-      pattern = "rds$",
-      full.names = T
-    ) %>%
-      lapply(readRDS)
-    names(o) <- list.files(
-      here("data", "raw", "global_occ_filtered", supfam),
-      pattern = "rds$"
-    ) %>% substr(nchar("global_occ_filtered") + 2, nchar(.) - 4)
-    return(o)
-  }
-)
+# Occurrences globales nettoyées mais pas filtrées convenablement
+# (dupliqués, profondeurs trop importantes)
+# occ <- lapply(
+#   superfamilies,
+#   \(supfam) {
+#     o <- list.files(
+#       here("data", "raw", "global_occ_filtered", supfam),
+#       pattern = "rds$",
+#       full.names = T
+#     ) %>%
+#       lapply(readRDS)
+#     names(o) <- list.files(
+#       here("data", "raw", "global_occ_filtered", supfam),
+#       pattern = "rds$"
+#     ) %>% substr(nchar("global_occ_filtered") + 2, nchar(.) - 4)
+#     return(o)
+#   }
+# )
+
+
 
 # occ_pointer <- lapply(
 #   superfamilies,
@@ -154,15 +158,18 @@ occ <- lapply(
 # occurrences avec l'aide du paquet stars.
 
 # rasters de profondeurs et profondeurs avec occurrences (par espèce)
+# objet contenant occurrences de INVMAR et GBIF avec distribution de
+# profondeur tronquée
 # source(here("scripts", "interaction_occurrences_profondeurs.R"))
 O <- list.files(
   here("data", "tidy"), pattern = "occurrences", full.names = T
 ) %>% readRDS()
 gebcoast <- list.files(
-  here("data", "tidy"),
-  pattern = "bathymetry_gebco_raster_5.*rds",
+  here("data", "tidy", "bathymetrie_gebco_raster"),
+  pattern = "raster_150",
   full.names = T
-) %>% readRDS()
+) %>%
+  rast()
 crs(gebcoast) <- "epsg:4326"
 
 # vecteur tamponné de toutes les occurrences d'espèces dont il faut modéliser
