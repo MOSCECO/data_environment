@@ -161,9 +161,25 @@ pa <- readRDS(
 # objet contenant occurrences de INVMAR et GBIF avec distribution de
 # profondeur tronquée
 # source(here("scripts", "interaction_occurrences_profondeurs.R"))
-O <- list.files(
+occ <- list.files(
   here("data", "tidy"), pattern = "occurrences", full.names = T
 ) %>% readRDS()
+occ <- lapply(
+  occ,
+  \(O) {
+    O$decimalLongitude <- O %>%
+      st_coordinates() %>%
+      as.data.frame() %>%
+      select(X) %>%
+      unlist(use.names = F)
+    O$decimalLatitude <- O %>%
+      st_coordinates() %>%
+      as.data.frame() %>%
+      select(Y) %>%
+      unlist(use.names = F)
+    return(O)
+  }
+)
 gebcoast <- list.files(
   here("data", "tidy", "bathymetrie_gebco_raster"),
   pattern = "raster_150",

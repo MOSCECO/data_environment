@@ -178,7 +178,7 @@ ggplot(data = oo_filter_depth, aes(y = scientificName, x = depth)) +
 # posées à 130, 140 et 150 m de fond, ce qui est plus clair en terme de
 # profondeur, mais pose un problème d'appât (est-ce que l'espèce a été attirée
 # hors de sa zone habituelle ?)
-# Finalement pour 130 m on a Coralliophila salebrosa, qui a été récupéré en
+# Finalement pour 130 m on a Coralliophila salebrosa, qui a été récupérée en
 # drague côtière (moins de variation de profondeurs j'imagine).
 # profondeur minimale :
 # BT_threshold30 <- -ceiling(-min(oo_filter_depth$depth)/100)*100

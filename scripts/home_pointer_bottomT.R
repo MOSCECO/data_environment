@@ -4,8 +4,10 @@ that_var <- "bottomT"
 
 # occurrence
 superfamily <- "Muricoidea"
-species     <- "Stramonita_rustica"
-O <- occ[[superfamily]][[species]]
+species     <- "Stramonita rustica"
+# O <- occ[[superfamily]][[species]]
+O <- occ[[species]] %>%
+  filter(database != "INVMAR")
 
 # fichier de sauvegarde (à cause des crashs)
 path_env_points <- here("data", "raw", "env_points")
@@ -151,16 +153,6 @@ data_env_pointers_ngb <- lapply(
   })
 
 table(is.na(data_env_pointers_ngb))
-
-saveRDS(
-  data_env_pointers_ngb,
-  here(path_epdv_supfam_sp, paste0("data_env_pointers_ngb_", that_var, ".rds"))
-)
-
-# data_env_pointers_ngb <- here(
-#   path_epdv_supfam_sp, paste0("data_env_pointers_ngb_", that_var, ".rds")
-# ) %>%
-#   readRDS()
 
 data_env_pointers_ngb <- here(path_epdv_supfam_sp) %>%
   list.files(pattern = "env_data_point", full.names = T) %>%
