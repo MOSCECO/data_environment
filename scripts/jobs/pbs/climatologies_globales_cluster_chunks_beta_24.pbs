@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#PBS -q gamma
+#PBS -q beta
 
-#PBS -l select=1:ncpus=1:mpiprocs=1
+#PBS -l select=1:ncpus=24:mpiprocs=24
 
 #PBS -N climSBT
 
@@ -20,6 +20,6 @@ module load gcc/11.2
 module load R/4.3.1
 
 # parallelism
-mpirun -n 1 /bin/bash $(which R) CMD BATCH --no-save /scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/climatologies_globales_cluster.R
+mpirun -n 24 /bin/bash $(which R) CMD BATCH --no-save /scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/climatologies_globales_cluster_chunks.R
 
 exit 0

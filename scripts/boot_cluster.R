@@ -32,3 +32,12 @@ lapply(
 
   }
 )
+
+# Appel des fonctions ----
+lapply(
+  list.files(
+    here("scripts", "FUN"),
+    full.names = T
+  ),
+  source
+)
