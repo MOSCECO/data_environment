@@ -11,48 +11,6 @@ print("Chargement des librairies réussie")
 # Choix du paramètre
 my_var <- "bottomT"
 
-# profondeurs
-gebcoast <- here(
-  "data", "raw", "bathymetrie_gebco_raster", "bathymetry_gebco_raster_150m.tif"
-) %>%
-  rast()
-
-# Import des données environnementales
-s2 <- list.files(
-  here("data", "raw", "env", "copernicus", my_var), full.names = T
-) %>%
-  read_stars()
-
-print(s2)
-
-# redimensionnement profondeurs selon les dimensions spatiales de copernicus
-crs(gebcoast) <- "epsg:4326"
-s2_gebcoast <- st_as_stars(gebcoast)
-r <- s2
-r <- r[, , , 1]
-print(r)
-r <- st_as_stars(r)
-print(r)
-# r <- split(r, 3)
-# print(r)
-s2_gebcoast_redim <- st_warp(s2_gebcoast, r)
-print(s2_gebcoast_redim)
-# sélection des cellules des variables de copernicus à partir des cellules
-# non-nulles de profondeur
-names(s2_gebcoast_redim) <- "depth"
-table(is.na(s2_gebcoast_redim["depth", ,]))
-
-# Découpage selon les bathymétries d'intérêt
-gc(verbose = F)
-s2_mask <- s2
-print("Conversion en stars")
-s2_mask <- st_as_stars(s2_mask)
-print("Conversion en stars réussie")
-print(s2_mask)
-print("Découpe des profondeurs")
-s2_mask[is.na(s2_gebcoast_redim)] <- NA
-print("Découpe des profondeurs réussie")
-
 # parallélisation avec parallel
 cl <- makeCluster(parallel::detectCores() - 1)
 print(cl)
