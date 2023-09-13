@@ -5,8 +5,8 @@ libs_to_call <- list(
   "foreach",
   "ggplot2",
   "here",
-  "rgdal",
   "reshape2",
+  "RNetCDF",
   "sf",
   "stars",
   "terra",
@@ -19,13 +19,16 @@ lapply(
 
   function(i) {
 
-    bool <- is.element(i, .packages(all.available = TRUE))
+    if (!is.null(i)) {
 
-    if (!bool) {
-      install.packages(i)
+      bool <- is.element(i, .packages(all.available = TRUE))
+
+      if (!bool) {
+        install.packages(i)
+      }
+
+      library(i, character.only = TRUE)
     }
-
-    library(i, character.only = TRUE)
 
   }
 )

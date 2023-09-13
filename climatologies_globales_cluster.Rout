@@ -1,0 +1,101 @@
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> # Découpage des netcdf et réalisation d'une climatologie moyenne
+> # Tentative sur le cluster
+> t0 <- Sys.time()
+> 
+> options("rgdal_show_exportToProj4_warnings"="none")
+> 
+> source(here::here("scripts", "boot_cluster.R"))
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+here() starts at /scratchbeta/manielg/MOSCECO_L2/data_environment
+Linking to GEOS 3.10.3, GDAL 3.4.3, PROJ 8.2.1; sf_use_s2() is TRUE
+Loading required package: abind
+terra 1.7.46
+> 
+> print("Chargement des librairies réussie")
+[1] "Chargement des librairies réussie"
+> 
+> # Choix du paramètre
+> my_var <- "bottomT"
+> 
+> # profondeurs
+> gebcoast <- here(
++   "data", "raw", "bathymetrie_gebco_raster", "bathymetry_gebco_raster_150m.tif"
++ ) %>%
++   rast()
+> 
+> # Import des données environnementales
+> s2 <- list.files(
++   here("data", "raw", "env", "copernicus", my_var), full.names = T
++ ) %>%
++   read_stars()
+> 
+> print(s2)
+stars_proxy object with 1 attribute in 20 file(s); showing the first 10 filenames
+$attr
+ [1] "[...]/copernicus_bottomT0.494024991989136_2012-01-01_2012-04-01_-140_-60_65_60.nc"
+ [2] "[...]/copernicus_bottomT0.494024991989136_2012-04-01_2012-07-01_-140_-60_65_60.nc"
+ [3] "[...]/copernicus_bottomT0.494024991989136_2012-07-01_2012-10-01_-140_-60_65_60.nc"
+ [4] "[...]/copernicus_bottomT0.494024991989136_2012-10-01_2013-01-01_-140_-60_65_60.nc"
+ [5] "[...]/copernicus_bottomT0.494024991989136_2013-01-01_2013-04-01_-140_-60_65_60.nc"
+ [6] "[...]/copernicus_bottomT0.494024991989136_2013-04-01_2013-07-01_-140_-60_65_60.nc"
+ [7] "[...]/copernicus_bottomT0.494024991989136_2013-07-01_2013-10-01_-140_-60_65_60.nc"
+ [8] "[...]/copernicus_bottomT0.494024991989136_2013-10-01_2014-01-01_-140_-60_65_60.nc"
+ [9] "[...]/copernicus_bottomT0.494024991989136_2014-01-01_2014-04-01_-140_-60_65_60.nc"
+[10] "[...]/copernicus_bottomT0.494024991989136_2014-04-01_2014-07-01_-140_-60_65_60.nc"
+
+dimension(s):
+     from   to offset    delta  refsys
+x       1 2461   -140  0.08333      NA
+y       1 1441  60.04 -0.08333      NA
+time    1 1847     NA       NA POSIXct
+                                          values x/y
+x                                           NULL [x]
+y                                           NULL [y]
+time 2012-01-01 12:00:00,...,2017-01-01 12:00:00    
+> 
+> # redimensionnement profondeurs selon les dimensions spatiales de copernicus
+> crs(gebcoast) <- "epsg:4326"
+> s2_gebcoast <- st_as_stars(gebcoast)
+> r <- s2
+> r <- r[, , , 1]
+> print(r)
+stars_proxy object with 1 attribute in 20 file(s); showing the first 10 filenames
+$attr
+ [1] "[...]/copernicus_bottomT0.494024991989136_2012-01-01_2012-04-01_-140_-60_65_60.nc"
+ [2] "[...]/copernicus_bottomT0.494024991989136_2012-04-01_2012-07-01_-140_-60_65_60.nc"
+ [3] "[...]/copernicus_bottomT0.494024991989136_2012-07-01_2012-10-01_-140_-60_65_60.nc"
+ [4] "[...]/copernicus_bottomT0.494024991989136_2012-10-01_2013-01-01_-140_-60_65_60.nc"
+ [5] "[...]/copernicus_bottomT0.494024991989136_2013-01-01_2013-04-01_-140_-60_65_60.nc"
+ [6] "[...]/copernicus_bottomT0.494024991989136_2013-04-01_2013-07-01_-140_-60_65_60.nc"
+ [7] "[...]/copernicus_bottomT0.494024991989136_2013-07-01_2013-10-01_-140_-60_65_60.nc"
+ [8] "[...]/copernicus_bottomT0.494024991989136_2013-10-01_2014-01-01_-140_-60_65_60.nc"
+ [9] "[...]/copernicus_bottomT0.494024991989136_2014-01-01_2014-04-01_-140_-60_65_60.nc"
+[10] "[...]/copernicus_bottomT0.494024991989136_2014-04-01_2014-07-01_-140_-60_65_60.nc"
+
+dimension(s):
+     from   to offset    delta  refsys                  values x/y
+x       1 2461   -140  0.08333      NA                    NULL [x]
+y       1 1441  60.04 -0.08333      NA                    NULL [y]
+time    1    1     NA       NA POSIXct 2012-01-01 12:00:00 UTC    
+> r <- st_as_stars(r)

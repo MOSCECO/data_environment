@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#PBS -q gamma
+
+#PBS -l select=1:ncpus=12:mpiprocs=12
+
+#PBS -N climSBT
+
+#PBS -l walltime=144:00:00
+
+#PBS -j oe
+
+# wd
+cd $PBS_O_WORKDIR
+
+# Chargement des modules
+module load lapack/3.8
+module load JAGS/4.3
+module load gcc/11.2
+module load R/4.3.1
+
+# parallelism
+mpirun -n 12 /bin/bash $(which R) CMD BATCH --no-save /scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/climatologies_globales_cluster.R
+
+exit 0
