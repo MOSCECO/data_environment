@@ -19,7 +19,14 @@ names(cgc) <- names(cgc) %>%
   unlist(use.names = F)
 
 writeRaster(
-  cgc, here("data", "analysis", "climatologies_globales_copernicus.tif")
+  x = cgc,
+  filename = here(
+    "data",
+    "analysis",
+    "climatologies_global",
+    "climatologies_globales_copernicus.tif"
+  ),
+  overwrite = T
 )
 # cgc <- here("data", "analysis", "climatologies_globales_copernicus.tif") %>%
 #   rast()
