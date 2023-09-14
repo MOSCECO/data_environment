@@ -79,3 +79,5 @@ source(here::here("scripts", "cc_bottomt.R"))
 source(here::here("scripts", "cc_aggregation.R"))
 # Agrégation des différente salinités en un seul objet stars
 source(here::here("scripts", "climatologies_salinité_hybride.R"))
+# sauvegarde pour utilisaiton par les modèles d'habitats (cgc)
+source(here::here("scripts", "climatologies_globales_copernicus.R"))
