@@ -25,6 +25,8 @@ my_param <- my_parameter %>%
 # Choix des fonctions
 v_funs <- c("mean", "sd", "mini", "maxi", "quantile")
 v_fnms <- c("mean", "stdv", "mini", "maxi", "qt01", "qt05", "qt95", "qt99")
+# v_funs <- c("mean", "sd")
+# v_fnms <- c("mean", "stdv")
 
 # profondeurs
 gebcoast <- here(
@@ -42,7 +44,7 @@ bathy_slices_redim <- here(
   "slices_redim"
 ) %>%
   list.files(full.names = T) %>%
-  lapply(read_stars)
+  lapply(read_stars, proxy = F)
 
 # boucle pour générer les climatologies
 bathy_slices_clim <- mapply(
@@ -63,7 +65,7 @@ bathy_slices_clim <- mapply(
       cat("ok\n")
 
       m <- st_get_dimension_values(s2, "x") %>% length()
-      s <- split(1:m, ceiling(seq_along(1:m)/107))
+      s <- split(1:m, ceiling(seq_along(1:m)/107)) # 23
 
       # sauvegarde
       path_ca_so_depth <- here(
@@ -73,17 +75,18 @@ bathy_slices_clim <- mapply(
 
       CLIMS <- lapply(
         X = seq_along(s),
+        # X = 1:2,
         FUN = \(i) {
 
           print(paste0(i, "/", length(s)))
 
-          s2c   <- st_as_stars(s2)
-          s2c   <- s2c[, s[[i]], , ]
+          s2c   <- st_as_stars(s2[, s[[i]], , ])
+          bathyc <- bathy[, s[[i]], ]
 
           # Découpage selon les bathymétries d'intérêt
           gc(verbose = F)
           s2_mask <- s2c
-          s2_mask[is.na(bathy)] <- NA
+          s2_mask[is.na(bathyc)] <- NA
 
           # Climatologies ----
           CLIM <- lapply(
@@ -151,7 +154,13 @@ bathy_slices_clim <- mapply(
                       s2_mask_clim,
                       dsn = here(
                         path_ca_so_depth,
-                        paste("climatologies", "globales", name_clim, sep = "_") %>%
+                        paste(
+                          "climatologies", "globales",
+                          name_clim,
+                          min(s[[i]]),
+                          max(s[[i]]),
+                          sep = "_"
+                        ) %>%
                           paste0(".tif")
                       )
                     )
@@ -209,6 +218,8 @@ bathy_slices_clim <- mapply(
   },
   c("0.494025", "9.573", "25.2114", "77.8539", "130.666"),
   bathy_slices_redim,
+  # c("0.494025", "9.573", "25.2114", "77.8539", "130.666")[1:2],
+  # bathy_slices_redim[1:2],
   SIMPLIFY = F,
   USE.NAMES = T
 )

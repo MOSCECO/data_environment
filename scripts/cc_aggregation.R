@@ -69,9 +69,11 @@ cg <- sapply(
   \(nm) {
     # nm <- "mean"
     sapply(
-      list.files(here(p, "so"))[c(1, 5, 3, 4, 2)],
+      list.files(here(p, "so"), pattern = "so[0-9]+.[0-9]+$")[c(1, 5, 3, 4, 2)],
       \(v) {
-        # v <- "so0.49"
+        # v <- list.files(
+        #   here(p, "so"), pattern = "so[0-9]+.[0-9]+$"
+        # )[c(1, 5, 3, 4, 2)][1]
         do.call(
           st_mosaic,
           here(p, "so", v) %>%
