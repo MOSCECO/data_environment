@@ -65,9 +65,17 @@ source(here::here("scripts", "climatologies_globales_cluster_chunks.R"))
 source(here::here("scripts", "climatologies_globales_cluster_chunks_nopar.R"))
 # Qui sert de base aux scripts finaux (cc : climatologies cluster)
 # Au 14/09/2023 : problème d'aggrégation des fichiers
-# au moment du CLIM_mosaic (voir dossier scripts/ERR)
+# au moment du CLIM_mosaic (voir dossier scripts/ERR) : c'est parce que les
+# chemins de sauvegarde pour les climatologies quantiles étaient mal renseignés
+# du coup j'écrasais chaque fichier à chaque fois... corrigé dans cc_bottomt
+# seulement
 source(here::here("scripts", "cc_sw1.R"))
 source(here::here("scripts", "cc_ww.R"))
 source(here::here("scripts", "cc_vhm0.R"))
 source(here::here("scripts", "cc_so.R"))
 source(here::here("scripts", "cc_bottomt.R"))
+# Problème d'agrégation pendant les clusters, j'agrège donc manuellement
+# les climatologies entre elles avec :
+source(here::here("scripts", "cc_aggregation.R"))
+# Agrégation des différente salinités en un seul objet stars
+source(here::here("scripts", "climatologies_salinité_hybride.R"))

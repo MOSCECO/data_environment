@@ -121,7 +121,13 @@ CLIMS <- lapply(
                 s2_mask_clim,
                 dsn = here(
                   "data", "tidy", "climatology_global",
-                  paste("climatologies", "globales", name_clim, sep = "_") %>%
+                  paste(
+                    "climatologies", "globales",
+                    name_clim,
+                    min(s[[i]]),
+                    max(s[[i]]),
+                    sep = "_"
+                  ) %>%
                     paste0(".tif")
                 )
               )

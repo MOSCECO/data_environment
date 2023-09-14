@@ -20,7 +20,6 @@ module load gcc/11.2
 module load R/4.3.1
 
 # parallelism
-mpirun -n 1 /bin/bash $(which R) CMD BATCH --no-save 
-/scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/cc_so.R
+mpirun -n 1 /bin/bash $(which R) CMD BATCH --no-save /scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/cc_so.R
 
 exit 0

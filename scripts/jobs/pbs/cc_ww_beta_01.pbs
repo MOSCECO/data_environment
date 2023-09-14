@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#PBS -q gamma
+#PBS -q beta
 
 #PBS -l select=1:ncpus=1:mpiprocs=1
 
-#PBS -N climSO
+#PBS -N climWW
 
-#PBS -l walltime=48:00:00
+#PBS -l walltime=144:00:00
 
 #PBS -j oe
 
@@ -20,7 +20,6 @@ module load gcc/11.2
 module load R/4.3.1
 
 # parallelism
-mpirun -n 1 /bin/bash $(which R) CMD BATCH --no-save 
-/scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/cc_so.R
+mpirun -n 1 /bin/bash $(which R) CMD BATCH --no-save /scratchbeta/manielg/MOSCECO_L2/data_environment/scripts/cc_ww.R
 
 exit 0
