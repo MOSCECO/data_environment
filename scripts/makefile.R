@@ -36,9 +36,11 @@ source(here::here("scripts", "home_pointer_waves.R"))
 source(here::here("scripts", "boot.R"))
 source(here::here("scripts", "grille_bathymétrique_pour_occurrences.R"))
 # source(here::here("scripts", "filtre_profondeurs_gebco_par_espece.R"))
+# code pour rééchantillonner les grilles de profondeurs (totales et par paliers)
+# qui servent ensuite au calcule de climatologies sur le cluster
+source(here::here("scripts", "grille_bathymétrique_reechantillonnee_0.083x0.083.R"))
 
-# Tentative de climatologies avec stars qui ne semble pas concluant
-# pour le moment :
+# Anciens codes de climatologies (pré livrable 02)
 source(here::here("scripts", "climatologies_vagues.R"))
 source(here::here("scripts", "climatologies_salinité.R"))
 source(here::here("scripts", "climatologies_salinité_hybride.R"))
@@ -49,3 +51,23 @@ source(here::here("scripts", "climatologies_finale.R"))
 source(here::here("scripts", "climatologies_stars_bottomt_valeurs_cotieres.R"))
 # Modification de ce code fonctionnel au 29/08/2023
 source(here::here("scripts", "climatologies_copernicus_ameriques_cotier.R"))
+
+# Nouveaux codes de climatologies pour le cluster :
+source(here::here("scripts", "boot_cluster.R"))
+# Codes avec tentative de parallélisation inconcluant sur le cluster
+# problème d'export des fonctions d'un paquet dans l'environnement de la boucle
+# parallélisée
+source(here::here("scripts", "climatologies_bottomt_cluster.R")) # V1
+source(here::here("scripts", "climatologies_globales_cluster.R"))
+# Découpage des données pour réduire le chargement
+source(here::here("scripts", "climatologies_globales_cluster_chunks.R"))
+# Le même sans parallélisation :
+source(here::here("scripts", "climatologies_globales_cluster_chunks_nopar.R"))
+# Qui sert de base aux scripts finaux (cc : climatologies cluster)
+# Au 14/09/2023 : problème d'aggrégation des fichiers
+# au moment du CLIM_mosaic (voir dossier scripts/ERR)
+source(here::here("scripts", "cc_sw1.R"))
+source(here::here("scripts", "cc_ww.R"))
+source(here::here("scripts", "cc_vhm0.R"))
+source(here::here("scripts", "cc_so.R"))
+source(here::here("scripts", "cc_bottomt.R"))
